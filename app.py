@@ -1,11 +1,20 @@
-import streamlit as st
-import numpy as np
+from pathlib import Path
+
 import joblib
+import numpy as np
+import streamlit as st
 
-model = joblib.load('model_rf.pkl')
-scaler = joblib.load('scaler.pkl')
+@st.cache_resource
+def get_artifacts():
+    base_path = Path(__file__).resolve().parent
+    return (
+        joblib.load(base_path / 'model_rf.pkl'),
+        joblib.load(base_path / 'scaler.pkl'),
+    )
 
-status_pekerjaan_map = {'Bekerja': 0, 'Mahasiswa': 1, 'Wiraswasta': 2}
+
+model, scaler = get_artifacts()
+
 tipe_produk_map = {'Kartu Kredit': 0, 'Kredit Berjalan': 1, 'Pinjaman Pribadi': 2}
 tujuan_pinjaman_map = {'Bisnis': 0, 'Konsolidasi Hutang': 1, 'Medis': 2, 'Pendidikan': 3, 'Pribadi': 4, 'Renovasi Rumah': 5}
 
@@ -15,7 +24,6 @@ col1, col2 = st.columns(2)
 
 with col1:
     usia = st.number_input('Usia', min_value=18, max_value=70, value=30)
-    status_pekerjaan = st.selectbox('Status Pekerjaan', list(status_pekerjaan_map.keys()))
     lama_bekerja_tahun = st.number_input('Lama Bekerja (tahun)', min_value=0, max_value=40, value=5, step=1)
     pendapatan_tahunan = st.number_input('Pendapatan Tahunan (Rp)', min_value=15000, max_value=250000, value=50000)
     skor_kredit = st.number_input('Skor Kredit', min_value=348, max_value=850, value=650)
@@ -37,7 +45,6 @@ with col2:
 if st.button('Prediksi'):
     features = np.array([[
         usia,
-        status_pekerjaan_map[status_pekerjaan],
         lama_bekerja_tahun,
         pendapatan_tahunan,
         skor_kredit,
@@ -52,7 +59,7 @@ if st.button('Prediksi'):
         suku_bunga,
         rasio_hutang,
         rasio_pinjaman,
-        rasio_pembayaran
+        rasio_pembayaran,
     ]])
 
     features_scaled = scaler.transform(features)
